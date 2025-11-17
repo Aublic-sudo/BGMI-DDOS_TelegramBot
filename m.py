@@ -1,4 +1,4 @@
-#bgmiddoserpython
+F#bgmiddoserpython
 
 import telebot
 import subprocess
@@ -125,38 +125,50 @@ def add_user(message):
     user_id = str(message.chat.id)
     if user_id in admin_id:
         command = message.text.split()
-        if len(command) > 2:
-            user_to_add = command[1]
-            duration_str = command[2]
 
-            try:
-                duration = int(duration_str[:-4])  # Extract the numeric part of the duration
-                if duration <= 0:
-                    raise ValueError
-                time_unit = duration_str[-4:].lower()  # Extract the time unit (e.g., 'hour', 'day', 'week', 'month')
-                if time_unit not in ('hour', 'hours', 'day', 'days', 'week', 'weeks', 'month', 'months'):
-                    raise ValueError
-            except ValueError:
-                response = "Invalid duration format. Please provide a positive integer followed by 'hour(s)', 'day(s)', 'week(s)', or 'month(s)'."
-                bot.reply_to(message, response)
-                return
+        if len(command) < 3:
+            bot.reply_to(message, "Please specify a user ID and duration (e.g., 1hour, 2 days, 3weeks, 4 months).")
+            return
 
-            if user_to_add not in allowed_user_ids:
-                allowed_user_ids.append(user_to_add)
-                with open(USER_FILE, "a") as file:
-                    file.write(f"{user_to_add}\n")
-                if set_approval_expiry_date(user_to_add, duration, time_unit):
-                    response = f"User {user_to_add} added successfully for {duration} {time_unit}. Access will expire on {user_approval_expiry[user_to_add].strftime('%Y-%m-%d %H:%M:%S')} 👍."
-                else:
-                    response = "Failed to set approval expiry date. Please try again later."
+        user_to_add = command[1]
+        duration_str = "".join(command[2:]).lower()  # join spaces: '12 months' -> '12months'
+
+        # Extract number part
+        number_part = ''.join([c for c in duration_str if c.isdigit()])
+        # Extract unit part
+        unit_part = ''.join([c for c in duration_str if c.isalpha()])
+
+        try:
+            duration = int(number_part)
+            if duration <= 0:
+                raise ValueError
+
+            # Allowed units
+            valid_units = ('hour', 'hours', 'day', 'days', 'week', 'weeks', 'month', 'months')
+
+            if unit_part not in valid_units:
+                raise ValueError
+        except ValueError:
+            bot.reply_to(message, "Invalid duration format. Use: 1hour, 2 days, 3weeks, 4 months.")
+            return
+
+        if user_to_add not in allowed_user_ids:
+            allowed_user_ids.append(user_to_add)
+            with open(USER_FILE, "a") as file:
+                file.write(f"{user_to_add}\n")
+
+            if set_approval_expiry_date(user_to_add, duration, unit_part):
+                response = f"User {user_to_add} added for {duration} {unit_part}. Expiry: {user_approval_expiry[user_to_add].strftime('%Y-%m-%d %H:%M:%S')} 👍."
             else:
-                response = "User already exists 🤦‍♂️."
+                response = "Failed to set approval expiry date."
         else:
-            response = "Please specify a user ID and the duration (e.g., 1hour, 2days, 3weeks, 4months) to add 😘."
+            response = "User already exists 🤦‍♂️."
+
     else:
-        response = "ꜰʀᴇᴇ ᴋᴇ ᴅʜᴀʀᴍ ꜱʜᴀʟᴀ ʜᴀɪ ᴋʏᴀ ᴊᴏ ᴍᴜ ᴜᴛᴛʜᴀ ᴋᴀɪ ᴋʜɪ ʙʜɪ ɢᴜꜱ ʀʜᴀɪ ʜᴏ ʙᴜʏ ᴋʀᴏ ꜰʀᴇᴇ ᴍᴀɪ ᴋᴜᴄʜ ɴʜɪ ᴍɪʟᴛᴀ ʙᴜʏ:- @mesh213 ❄."
+        response = "You are not an admin 😭."
 
     bot.reply_to(message, response)
+
 
 # Command handler for retrieving user info
 @bot.message_handler(commands=['myinfo'])
@@ -452,6 +464,7 @@ while True:
         bot.polling(none_stop=True)
     except Exception as e:
         print(e)
+
 
 
 
