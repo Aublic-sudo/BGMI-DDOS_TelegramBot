@@ -1,6 +1,7 @@
 import subprocess
 import time
 import logging
+import os 
 from aiogram import Bot
 import asyncio
 
